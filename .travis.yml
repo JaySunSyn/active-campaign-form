@@ -16,9 +16,9 @@ cache:
     - node_modules
 install:
   - npm install -g polymer-cli
-  - npm install
-  - polymer install
+  - npm install -g yarn
+  - yarn install
 before_script:
-  - npm run lint
+  - yarn run lint
 script:
-  - xvfb-run npm run test
+  - xvfb-run yarn run test
