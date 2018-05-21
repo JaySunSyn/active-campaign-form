@@ -34,8 +34,8 @@ class ActiveCampaignForm extends PolymerElement {
       <div>[[_errorMessage]]</div>
       <iron-form>
         <form>
-        <input type="hidden" name="u" value="[[u]]" />
-        <input type="hidden" name="f" value="[[f]]" />
+        <input type="hidden" name="u" value="[[formId]]" />
+        <input type="hidden" name="f" value="[[formId]]" />
         <input type="hidden" name="s" value="[[s]]"/>
         <input type="hidden" name="c" value="[[c]]" />
         <input type="hidden" name="m" value="[[m]]" />
@@ -50,11 +50,12 @@ class ActiveCampaignForm extends PolymerElement {
   static get properties() {
     return {
       accountName: String,
-      u: {
-        type: String,
-        value: '1',
-      },
-      f: {
+      /** 
+       * The active campaign form ID (?)
+       * e.g. https://elfycares.activehosted.com/app/forms/integrate/3 (3 = formId)
+       * Hidden fields: u, f
+       */
+      formId: {
         type: String,
         value: '1',
       },
@@ -74,6 +75,9 @@ class ActiveCampaignForm extends PolymerElement {
         type: String,
         value: 'sub',
       },
+      /** 
+       * Version ?
+       */
       v: {
         type: String,
         value: '2',
@@ -89,17 +93,32 @@ class ActiveCampaignForm extends PolymerElement {
     return this.shadowRoot.querySelector('slot');
   }
 
+  get instances() {
+    window.activeCampaignForm = window.activeCampaignForm || {};
+    window.activeCampaignForm.forms = window.activeCampaignForm.forms || [];
+
+    return window.activeCampaignForm.forms;
+  }
+
   disconnectedCallback() {
     super.disconnectedCallback();
     this._observer.disconnect();
     this.form.removeEventListener('iron-form-presubmit', this._onIronFormPresubmit.bind(this));
+    this.instances.splice(this.instances.indexOf(this), 1);
   }
 
   connectedCallback() {
     super.connectedCallback();
+    this.instances.push(this);
 
-    window._show_error = this._show_error.bind(this);
-    window._show_thank_you = this._show_thank_you.bind(this);
+    window._show_error = (...args) => {
+      this.instances
+        .forEach(instance => instance._show_error.call(instance, ...args));
+    };
+    window._show_thank_you = (...args) => {
+      this.instances
+        .forEach(instance => instance._show_thank_you.call(instance, ...args));
+    };
 
     this._observer = new PolymerFlattenedNodesObserver(this.slot, (info) => {
       this._processNewNodes(info.addedNodes);
@@ -138,6 +157,7 @@ class ActiveCampaignForm extends PolymerElement {
       return;
     }
     this._errorMessage = '';
+    this._thankYouMessage = '';
 
     const serialized = this.form.serializeForm();
     const urlData = Object.keys(serialized)
@@ -148,12 +168,18 @@ class ActiveCampaignForm extends PolymerElement {
     this._load_script(`https://${this.accountName}.activehosted.com/proc.php?${urlData}&jsonp=true`);
   }
 
-  _show_error(code, message) {
+  _show_error(formId, message) {
+    if (formId !== this.formId) {
+      return;
+    }
     this._setChildrenDisabled(false);
     this._errorMessage = message;
   }
 
-  _show_thank_you(code, message) {
+  _show_thank_you(formId, message) {
+    if (formId !== this.formId) {
+      return;
+    }
     this._setChildrenDisabled(false);
     this.form.reset();
     this._thankYouMessage = message;

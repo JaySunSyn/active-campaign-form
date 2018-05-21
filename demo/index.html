@@ -25,7 +25,20 @@
       <h3>Basic active-campaign-form demo</h3>
       <demo-snippet>
         <template>
-          <active-campaign-form account-name="elfycares">
+          <active-campaign-form account-name="elfycares" form-id="1">
+            <paper-input name="fullname" label="fullname"></paper-input>
+            <paper-input type="email" label="email" name="email"></paper-input>
+            <paper-button raised type="submit">Submit</paper-button>
+          </active-campaign-form>
+        </template>
+      </demo-snippet>
+    </div>
+
+    <div class="vertical-section-container centered">
+      <h3>Another Basic active-campaign-form demo</h3>
+      <demo-snippet>
+        <template>
+          <active-campaign-form account-name="elfycares" form-id="3">
             <paper-input name="fullname" label="fullname"></paper-input>
             <paper-input type="email" label="email" name="email"></paper-input>
             <paper-button raised type="submit">Submit</paper-button>
