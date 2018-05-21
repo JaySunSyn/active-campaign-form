@@ -31,7 +31,7 @@ class ActiveCampaignForm extends PolymerElement {
           @apply --active-campaign-form-error;
         }
       </style>
-      <div>[[_errorMessage]]</div>
+      <div class="error">[[_errorMessage]]</div>
       <iron-form>
         <form>
         <input type="hidden" name="u" value="[[formId]]" />
@@ -76,12 +76,21 @@ class ActiveCampaignForm extends PolymerElement {
         value: 'sub',
       },
       /** 
-       * Version ?
+       * The form api version (?)
        */
       v: {
         type: String,
         value: '2',
       },
+
+      validate: {
+        type: Function,
+        value() {
+          return () => {
+            return this.form.validate();
+          }
+        }
+      }
     };
   }
 
@@ -128,6 +137,27 @@ class ActiveCampaignForm extends PolymerElement {
     this.form.addEventListener('iron-form-presubmit', this._onIronFormPresubmit.bind(this));
   }
 
+  submit() {
+    if (!this.accountName) {
+      this._errorMessage = 'accountName property is not configured!';
+      return;
+    }
+
+    if (!this.validate()) {
+      return;
+    }
+    this._errorMessage = '';
+    this._thankYouMessage = '';
+
+    const serialized = this.form.serializeForm();
+    const urlData = Object.keys(serialized)
+      .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(serialized[k]))
+      .join('&');
+
+    this._setChildrenDisabled(true);
+    this._load_script(`https://${this.accountName}.activehosted.com/proc.php?${urlData}&jsonp=true`);
+  }
+
   _onIronFormPresubmit() {
     event.preventDefault();
     this.submit();
@@ -149,23 +179,6 @@ class ActiveCampaignForm extends PolymerElement {
     if (submit) {
       submit.removeEventListener('click', this.submit.bind(this));
     }
-  }
-
-  submit() {
-    if (!this.accountName) {
-      this._errorMessage = 'accountName property is not configured!';
-      return;
-    }
-    this._errorMessage = '';
-    this._thankYouMessage = '';
-
-    const serialized = this.form.serializeForm();
-    const urlData = Object.keys(serialized)
-      .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(serialized[k]))
-      .join('&');
-
-    this._setChildrenDisabled(true);
-    this._load_script(`https://${this.accountName}.activehosted.com/proc.php?${urlData}&jsonp=true`);
   }
 
   _show_error(formId, message) {
